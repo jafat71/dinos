@@ -1,61 +1,110 @@
 package com.tanksdinos.tanksdinos;
 
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.paint.Color;
-import javafx.scene.input.KeyCode;
+import javafx.scene.image.Image;
+import java.util.ArrayList;
+import java.util.List;
 
-public class Tank extends GameObject {
-    private static final double SPEED = 5.0;
-    private static final double ROTATION = 3.0;
-    private double angle;
+public class Tank extends Sprite {
+    private static final double MOVE_SPEED = 3.0;
+    private static final int MAX_HEALTH = 100;
+    private int health;
+    private boolean hasShield;
+    private long shieldStartTime;
+    private int shotPower;
+    private boolean doubleShot;
+    private List<Projectile> projectiles;
+    private AudioManager audioManager;
 
-    public Tank(double x, double y) {
-        super(x, y, 40, 60);
-        this.angle = 0;
+    public Tank(double x, double y, AudioManager audioManager) {
+        super(x, y, new Image(Tank.class.getResourceAsStream("/images/tank.png")));
+        this.health = MAX_HEALTH;
+        this.projectiles = new ArrayList<>();
+        this.audioManager = audioManager;
+        this.shotPower = 1;
     }
 
-    public void handleInput(KeyCode code) {
-        switch (code) {
-            case LEFT:
-                angle -= ROTATION;
+    public void handlePowerUp(PowerUp powerUp) {
+        switch (powerUp.getType()) {
+            case REPAIR:
+                health = Math.min(health + 50, MAX_HEALTH);
                 break;
-            case RIGHT:
-                angle += ROTATION;
+            case SHIELD:
+                hasShield = true;
+                shieldStartTime = System.currentTimeMillis();
                 break;
-            case UP:
-                moveForward();
+            case DOUBLE_SHOT:
+                doubleShot = true;
                 break;
-            case SPACE:
-                shoot();
+            case POWER_SHOT:
+                shotPower = 2;
                 break;
         }
+        audioManager.playPowerUpSound();
     }
 
-    private void moveForward() {
-        double rad = Math.toRadians(angle);
-        velocityX = Math.cos(rad) * SPEED;
-        velocityY = Math.sin(rad) * SPEED;
-    }
-
-    private void shoot() {
-        // Implement shooting mechanism
+    public void shoot() {
+        audioManager.playShootSound();
+        if (doubleShot) {
+            projectiles.add(new Projectile(x - 10, y, shotPower));
+            projectiles.add(new Projectile(x + 10, y, shotPower));
+        } else {
+            projectiles.add(new Projectile(x, y, shotPower));
+        }
     }
 
     @Override
     public void update() {
-        x += velocityX;
-        y += velocityY;
-        velocityX *= 0.95; // friction
-        velocityY *= 0.95;
+        // Actualizar proyectiles
+        projectiles.removeIf(Projectile::isDead);
+        projectiles.forEach(Projectile::update);
+
+        // Actualizar escudo
+        if (hasShield && System.currentTimeMillis() - shieldStartTime > 10000) {
+            hasShield = false;
+        }
     }
 
     @Override
     public void render(GraphicsContext gc) {
-        gc.save();
-        gc.translate(x + width/2, y + height/2);
-        gc.rotate(angle);
-        gc.setFill(Color.GREEN);
-        gc.fillRect(-width/2, -height/2, width, height);
-        gc.restore();
+        super.render(gc);
+        
+        // Renderizar proyectiles
+        projectiles.forEach(p -> p.render(gc));
+
+        // Renderizar escudo si está activo
+        if (hasShield) {
+            gc.setGlobalAlpha(0.5);
+            gc.drawImage(new Image(Tank.class.getResourceAsStream("/images/shield.png")), x - width/2, y - height/2);
+            gc.setGlobalAlpha(1.0);
+        }
+
+        // Renderizar barra de vida
+        renderHealthBar(gc);
+    }
+
+    private void renderHealthBar(GraphicsContext gc) {
+        double barWidth = 50;
+        double barHeight = 5;
+        double healthPercent = (double) health / MAX_HEALTH;
+        
+        gc.setFill(javafx.scene.paint.Color.RED);
+        gc.fillRect(x - barWidth/2, y - height/2 - 10, barWidth, barHeight);
+        gc.setFill(javafx.scene.paint.Color.GREEN);
+        gc.fillRect(x - barWidth/2, y - height/2 - 10, barWidth * healthPercent, barHeight);
+    }
+
+    public List<Projectile> getProjectiles() {
+        return projectiles;
+    }
+
+    public void takeDamage(int damage) {
+        if (!hasShield) {
+            health -= damage;
+        }
+    }
+
+    public boolean isDead() {
+        return health <= 0;
     }
 }

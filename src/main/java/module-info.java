@@ -2,6 +2,7 @@ module com.tanksdinos.tanksdinos {
     requires javafx.controls;
     requires javafx.graphics;
     requires javafx.base;
+    requires javafx.media;
 
     requires javafx.fxml;
 
