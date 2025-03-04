@@ -95,7 +95,7 @@ public class Main extends Application {
 
         // Inicializar el resto de managers
         menuManager = new MenuManager();
-        dbManager = new DatabaseManager();
+        dbManager = DatabaseManager.getInstance();
         levelManager = new LevelManager();
         powerUpManager = new PowerUpManager();
         gameWorld = new GameWorld(levelManager, powerUpManager, audioManager, false, Color.GREEN, null);
@@ -154,7 +154,10 @@ public class Main extends Application {
         gc.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
         lastScore = gameWorld.getScore();
         menuManager.renderGameOver(gc);
-        dbManager.saveScore(lastScore);
+        User currentUser = UserManager.getInstance().getCurrentUser();
+        if (currentUser != null && !currentUser.isGuest()) {
+            dbManager.saveScore(currentUser.getUsername(), lastScore, gameWorld.isTwoPlayers());
+        }
     }
 
     private void handleGameOverInput(KeyCode code) {

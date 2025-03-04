@@ -5,14 +5,20 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
+import java.util.List;
 
 public class MenuManager {
     private enum MenuState {
+        LOGIN,
+        REGISTER,
         MAIN,
         GAME_TYPE,
         PLAYER_SETUP,
         LOADING,
-        GAME_OVER
+        GAME_OVER,
+        HIGH_SCORES,
+        LOGIN_FORM,
+        REGISTER_FORM
     }
 
     private String[] mainMenuOptions = {"Play Game", "Exit"};
@@ -25,10 +31,16 @@ public class MenuManager {
     private int selectedColor2 = 1;
     private boolean isTwoPlayers = false;
     private double volume = 1.0;
-    private MenuState menuState = MenuState.MAIN;
+    private MenuState menuState = MenuState.LOGIN;
     private LoadingState loadingState = null;
     private long loadingStartTime;
     private static final int LOADING_DURATION = 500; // 0.5 segundos
+    private String username = "";
+    private String password = "";
+    private boolean isEnteringUsername = true;
+    private String errorMessage = "";
+    private long errorMessageTime = 0;
+    private static final long ERROR_MESSAGE_DURATION = 3000; // 3 segundos
 
     private class LoadingState {
         final MenuState nextState;
@@ -55,6 +67,12 @@ public class MenuManager {
 
     public void handleInput(KeyCode code) {
         switch (menuState) {
+            case LOGIN:
+                handleLoginInput(code);
+                break;
+            case REGISTER:
+                handleRegisterInput(code);
+                break;
             case MAIN:
                 handleMainMenuInput(code);
                 break;
@@ -67,6 +85,15 @@ public class MenuManager {
             case GAME_OVER:
                 handleGameOverInput(code);
                 break;
+            case HIGH_SCORES:
+                handleHighScoresInput(code);
+                break;
+            case LOGIN_FORM:
+                handleLoginFormInput(code);
+                break;
+            case REGISTER_FORM:
+                handleRegisterFormInput(code);
+                break;
         }
     }
 
@@ -74,14 +101,26 @@ public class MenuManager {
         switch (code) {
             case UP:
             case DOWN:
-                selectedOption = (selectedOption + 1) % mainMenuOptions.length;
+                selectedOption = (selectedOption + (code == KeyCode.UP ? -1 : 1) + 4) % 4;
                 break;
             case ENTER:
-                if (selectedOption == 0) {
-                    menuState = MenuState.GAME_TYPE;
-                    selectedOption = 0;
-                } else {
-                    System.exit(0);
+                switch (selectedOption) {
+                    case 0: // Play Game
+                        menuState = MenuState.GAME_TYPE;
+                        selectedOption = 0;
+                        break;
+                    case 1: // High Scores
+                        menuState = MenuState.HIGH_SCORES;
+                        selectedOption = 0;
+                        break;
+                    case 2: // Logout
+                        UserManager.getInstance().logout();
+                        menuState = MenuState.LOGIN;
+                        selectedOption = 0;
+                        break;
+                    case 3: // Exit
+                        System.exit(0);
+                        break;
                 }
                 break;
         }
@@ -191,32 +230,62 @@ public class MenuManager {
             case GAME_OVER:
                 renderGameOver(gc);
                 break;
+            case LOGIN:
+                renderLoginMenu(gc);
+                break;
+            case REGISTER:
+                renderRegisterMenu(gc);
+                break;
+            case HIGH_SCORES:
+                renderHighScores(gc);
+                break;
+            case LOGIN_FORM:
+                renderLoginForm(gc);
+                break;
+            case REGISTER_FORM:
+                renderRegisterForm(gc);
+                break;
         }
     }
 
     private void renderMainMenu(GraphicsContext gc) {
-        // Limpia la pantalla con fondo negro
         gc.setFill(Color.BLACK);
         gc.fillRect(0, 0, 800, 600);
 
-        // Configura el estilo del texto
         gc.setFill(Color.WHITE);
-        gc.setFont(new Font("Arial", 30));
-        gc.setTextAlign(TextAlignment.CENTER);
-
-        // Dibuja el título
         gc.setFont(new Font("Arial", 40));
+        gc.setTextAlign(TextAlignment.CENTER);
         gc.fillText("TANKS VS DINOSAURS", 400, 100);
 
-        // Dibuja las opciones del menú
+        // Mostrar usuario actual
+        gc.setFont(new Font("Arial", 20));
+        User currentUser = UserManager.getInstance().getCurrentUser();
+        if (currentUser == null) {
+            gc.fillText("Welcome! Please login or register", 400, 150);
+            String[] options = {
+                "Login",
+                "Register",
+                "Play as Guest",
+                "Exit"
+            };
+            renderOptions(gc, options);
+        } else {
+            gc.fillText("Welcome, " + currentUser.getUsername() + "!", 400, 150);
+            String[] options = {
+                "Play Game",
+                "High Scores",
+                "Logout",
+                "Exit"
+            };
+            renderOptions(gc, options);
+        }
+    }
+
+    private void renderOptions(GraphicsContext gc, String[] options) {
         gc.setFont(new Font("Arial", 30));
-        for (int i = 0; i < mainMenuOptions.length; i++) {
-            if (i == selectedOption) {
-                gc.setFill(Color.YELLOW); // Opción seleccionada en amarillo
-            } else {
-                gc.setFill(Color.WHITE);  // Otras opciones en blanco
-            }
-            gc.fillText(mainMenuOptions[i], 400, 250 + i * 50);
+        for (int i = 0; i < options.length; i++) {
+            gc.setFill(selectedOption == i ? Color.YELLOW : Color.WHITE);
+            gc.fillText(options[i], 400, 250 + i * 50);
         }
     }
 
@@ -343,5 +412,281 @@ public class MenuManager {
     private void renderMenuBackground(GraphicsContext gc) {
         gc.setFill(Color.BLACK);
         gc.fillRect(0, 0, 800, 600);
+    }
+
+    private void renderLoginMenu(GraphicsContext gc) {
+        gc.setFill(Color.BLACK);
+        gc.fillRect(0, 0, 800, 600);
+        
+        gc.setFill(Color.WHITE);
+        gc.setFont(new Font("Arial", 40));
+        gc.setTextAlign(TextAlignment.CENTER);
+        gc.fillText("TANKS VS DINOSAURS", 400, 100);
+        
+        gc.setFont(new Font("Arial", 30));
+        
+        String[] options = {
+            "Login",
+            "Register",
+            "Play as Guest",
+            "Exit"
+        };
+        
+        for (int i = 0; i < options.length; i++) {
+            gc.setFill(selectedOption == i ? Color.YELLOW : Color.WHITE);
+            gc.fillText(options[i], 400, 250 + i * 50);
+        }
+    }
+
+    private void renderRegisterMenu(GraphicsContext gc) {
+        gc.setFill(Color.BLACK);
+        gc.fillRect(0, 0, 800, 600);
+        
+        gc.setFill(Color.WHITE);
+        gc.setFont(new Font("Arial", 40));
+        gc.setTextAlign(TextAlignment.CENTER);
+        gc.fillText("REGISTER", 400, 100);
+        
+        gc.setFont(new Font("Arial", 20));
+        gc.fillText("Username: " + username + (isEnteringUsername ? "_" : ""), 400, 200);
+        gc.fillText("Password: " + "*".repeat(password.length()) + (!isEnteringUsername ? "_" : ""), 400, 250);
+        gc.fillText("Press ENTER to confirm, ESC to cancel", 400, 350);
+    }
+
+    private void renderHighScores(GraphicsContext gc) {
+        gc.setFill(Color.BLACK);
+        gc.fillRect(0, 0, 800, 600);
+        
+        gc.setFill(Color.WHITE);
+        gc.setFont(new Font("Arial", 40));
+        gc.setTextAlign(TextAlignment.CENTER);
+        gc.fillText("HIGH SCORES", 400, 100);
+
+        List<Score> highScores = UserManager.getInstance().getHighScores();
+        gc.setFont(new Font("Arial", 20));
+        
+        // Encabezados
+        gc.fillText("Rank", 200, 180);
+        gc.fillText("Player", 350, 180);
+        gc.fillText("Score", 500, 180);
+        gc.fillText("Date", 650, 180);
+
+        // Listar puntuaciones
+        int y = 220;
+        for (int i = 0; i < highScores.size(); i++) {
+            Score score = highScores.get(i);
+            gc.setFill(i < 3 ? Color.YELLOW : Color.WHITE);
+            gc.fillText("#" + (i + 1), 200, y);
+            gc.fillText(score.getUsername(), 350, y);
+            gc.fillText(String.valueOf(score.getScore()), 500, y);
+            gc.fillText(score.getFormattedDate(), 650, y);
+            y += 30;
+        }
+
+        gc.setFill(Color.GRAY);
+        gc.fillText("Press ESC to return", 400, 550);
+    }
+
+    private void handleLoginInput(KeyCode code) {
+        switch (code) {
+            case UP:
+                selectedOption = (selectedOption - 1 + 4) % 4;
+                break;
+            case DOWN:
+                selectedOption = (selectedOption + 1) % 4;
+                break;
+            case ENTER:
+                switch (selectedOption) {
+                    case 0: // Login
+                        menuState = MenuState.LOGIN_FORM;
+                        resetLoginFields();
+                        break;
+                    case 1: // Register
+                        menuState = MenuState.REGISTER_FORM;
+                        resetLoginFields();
+                        break;
+                    case 2: // Guest
+                        UserManager.getInstance().loginAsGuest();
+                        menuState = MenuState.MAIN;
+                        break;
+                    case 3: // Exit
+                        System.exit(0);
+                        break;
+                }
+                break;
+        }
+    }
+
+    private void resetLoginFields() {
+        username = "";
+        password = "";
+        selectedOption = 0;
+    }
+
+    private void handleRegisterInput(KeyCode code) {
+        // Similar a handleLoginInput
+    }
+
+    private void handleHighScoresInput(KeyCode code) {
+        if (code == KeyCode.ESCAPE || code == KeyCode.ENTER) {
+            menuState = MenuState.MAIN;
+        }
+    }
+
+    private void renderLoginForm(GraphicsContext gc) {
+        gc.setFill(Color.BLACK);
+        gc.fillRect(0, 0, 800, 600);
+        
+        gc.setFill(Color.WHITE);
+        gc.setFont(new Font("Arial", 40));
+        gc.setTextAlign(TextAlignment.CENTER);
+        gc.fillText("LOGIN", 400, 100);
+        
+        gc.setFont(new Font("Arial", 20));
+        gc.setFill(selectedOption == 0 ? Color.YELLOW : Color.WHITE);
+        gc.fillText("Username: " + username + (selectedOption == 0 ? "_" : ""), 400, 250);
+        
+        gc.setFill(selectedOption == 1 ? Color.YELLOW : Color.WHITE);
+        gc.fillText("Password: " + "*".repeat(password.length()) + (selectedOption == 1 ? "_" : ""), 400, 300);
+        
+        gc.setFill(selectedOption == 2 ? Color.YELLOW : Color.WHITE);
+        gc.fillText("Login", 400, 380);
+        
+        gc.setFill(Color.GRAY);
+        gc.setFont(new Font("Arial", 16));
+        gc.fillText("Press ESC to go back", 400, 500);
+        gc.fillText("Use TAB to switch fields, ENTER to confirm", 400, 530);
+
+        // Mostrar mensaje de error si existe
+        if (!errorMessage.isEmpty() && System.currentTimeMillis() - errorMessageTime < ERROR_MESSAGE_DURATION) {
+            gc.setFill(Color.RED);
+            gc.setFont(new Font("Arial", 16));
+            gc.fillText(errorMessage, 400, 450);
+        }
+    }
+
+    private void handleLoginFormInput(KeyCode code) {
+        switch (code) {
+            case TAB:
+                selectedOption = (selectedOption + 1) % 3;
+                break;
+            case UP:
+            case DOWN:
+                selectedOption = (selectedOption + (code == KeyCode.UP ? -1 : 1) + 3) % 3;
+                break;
+            case ESCAPE:
+                menuState = MenuState.LOGIN;
+                break;
+            case ENTER:
+                if (selectedOption == 2) {
+                    if (username.isEmpty() || password.isEmpty()) {
+                        showError("Username and password cannot be empty");
+                    } else if (UserManager.getInstance().login(username, password)) {
+                        menuState = MenuState.MAIN;
+                    } else {
+                        showError("Invalid username or password");
+                    }
+                }
+                break;
+            case BACK_SPACE:
+                if (selectedOption == 0 && username.length() > 0) {
+                    username = username.substring(0, username.length() - 1);
+                } else if (selectedOption == 1 && password.length() > 0) {
+                    password = password.substring(0, password.length() - 1);
+                }
+                break;
+            default:
+                if (code.isLetterKey() || code.isDigitKey()) {
+                    if (selectedOption == 0) {
+                        username += code.getChar();
+                    } else if (selectedOption == 1) {
+                        password += code.getChar();
+                    }
+                }
+                break;
+        }
+    }
+
+    private void handleRegisterFormInput(KeyCode code) {
+        switch (code) {
+            case TAB:
+                selectedOption = (selectedOption + 1) % 3;
+                break;
+            case UP:
+            case DOWN:
+                selectedOption = (selectedOption + (code == KeyCode.UP ? -1 : 1) + 3) % 3;
+                break;
+            case ESCAPE:
+                menuState = MenuState.LOGIN;
+                break;
+            case ENTER:
+                if (selectedOption == 2) {
+                    if (username.isEmpty() || password.isEmpty()) {
+                        showError("Username and password cannot be empty");
+                    } else if (username.length() < 3) {
+                        showError("Username must be at least 3 characters");
+                    } else if (password.length() < 4) {
+                        showError("Password must be at least 4 characters");
+                    } else if (UserManager.getInstance().register(username, password)) {
+                        menuState = MenuState.MAIN;
+                    } else {
+                        showError("Username already exists");
+                    }
+                }
+                break;
+            case BACK_SPACE:
+                if (selectedOption == 0 && username.length() > 0) {
+                    username = username.substring(0, username.length() - 1);
+                } else if (selectedOption == 1 && password.length() > 0) {
+                    password = password.substring(0, password.length() - 1);
+                }
+                break;
+            default:
+                if (code.isLetterKey() || code.isDigitKey()) {
+                    if (selectedOption == 0) {
+                        username += code.getChar();
+                    } else if (selectedOption == 1) {
+                        password += code.getChar();
+                    }
+                }
+                break;
+        }
+    }
+
+    private void renderRegisterForm(GraphicsContext gc) {
+        gc.setFill(Color.BLACK);
+        gc.fillRect(0, 0, 800, 600);
+        
+        gc.setFill(Color.WHITE);
+        gc.setFont(new Font("Arial", 40));
+        gc.setTextAlign(TextAlignment.CENTER);
+        gc.fillText("REGISTER", 400, 100);
+        
+        gc.setFont(new Font("Arial", 20));
+        gc.setFill(selectedOption == 0 ? Color.YELLOW : Color.WHITE);
+        gc.fillText("Username: " + username + (selectedOption == 0 ? "_" : ""), 400, 250);
+        
+        gc.setFill(selectedOption == 1 ? Color.YELLOW : Color.WHITE);
+        gc.fillText("Password: " + "*".repeat(password.length()) + (selectedOption == 1 ? "_" : ""), 400, 300);
+        
+        gc.setFill(selectedOption == 2 ? Color.YELLOW : Color.WHITE);
+        gc.fillText("Register", 400, 380);
+        
+        gc.setFill(Color.GRAY);
+        gc.setFont(new Font("Arial", 16));
+        gc.fillText("Press ESC to go back", 400, 500);
+        gc.fillText("Use TAB to switch fields, ENTER to confirm", 400, 530);
+
+        // Mostrar mensaje de error si existe
+        if (!errorMessage.isEmpty() && System.currentTimeMillis() - errorMessageTime < ERROR_MESSAGE_DURATION) {
+            gc.setFill(Color.RED);
+            gc.setFont(new Font("Arial", 16));
+            gc.fillText(errorMessage, 400, 450);
+        }
+    }
+
+    private void showError(String message) {
+        errorMessage = message;
+        errorMessageTime = System.currentTimeMillis();
     }
 }

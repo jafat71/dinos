@@ -14,7 +14,7 @@ public class AudioManager {
             // Cargar sonidos usando la ruta correcta
             shootSound = new AudioClip(getClass().getResource("/audio/shoot.wav").toExternalForm());
             explosionSound = new AudioClip(getClass().getResource("/audio/explosion.wav").toExternalForm());
-            dinoRoarSound = new AudioClip(getClass().getResource("/audio/roar.wav").toExternalForm());
+            dinoRoarSound = new AudioClip(getClass().getResource("/audio/dino.mp3").toExternalForm());
             powerUpSound = new AudioClip(getClass().getResource("/audio/powerup.wav").toExternalForm());
         } catch (Exception e) {
             System.err.println("Error cargando sonidos: " + e.getMessage());

@@ -20,6 +20,8 @@ public class Dinosaur extends Sprite {
     private Point2D wanderTarget;
     private boolean isChasing = false;
     private Random random = new Random();
+    private static double speedMultiplier = 1.0;
+    private double baseSpeed = 2.0;
 
     public Dinosaur(double x, double y, Tank player1, Tank player2) {
         super(x, y, dinoImage, 40, 40);
@@ -103,6 +105,8 @@ public class Dinosaur extends Sprite {
                 wander();
             }
             
+            // Movimiento existente multiplicado por el speedMultiplier
+            double actualSpeed = baseSpeed * speedMultiplier;
             super.update();
         }
     }
@@ -130,5 +134,13 @@ public class Dinosaur extends Sprite {
 
     public boolean isDead() {
         return health <= 0;
+    }
+
+    public static void increaseSpeed() {
+        speedMultiplier *= 1.1;
+    }
+
+    public static void resetSpeed() {
+        speedMultiplier = 1.0;
     }
 }

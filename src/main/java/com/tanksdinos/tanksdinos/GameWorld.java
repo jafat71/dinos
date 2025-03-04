@@ -111,6 +111,7 @@ public class GameWorld {
 
     private void spawnHorde() {
         audioManager.playDinoRoarSound();
+        Dinosaur.increaseSpeed(); // Aumentar velocidad con cada horda
         
         for (int i = 0; i < HORDE_SIZE; i++) {
             double offsetX = random.nextDouble() * 100;
@@ -336,5 +337,24 @@ public class GameWorld {
         }
         
         return message.toString();
+    }
+
+    public void resetGame() {
+        Dinosaur.resetSpeed(); // Resetear velocidad al iniciar nueva partida
+        // ... resto del código de reset
+    }
+
+    private void checkGameOver() {
+        if (isGameOver()) {
+            if (!isTwoPlayers) {
+                // Guardar puntuación solo en modo un jugador
+                UserManager.getInstance().saveScore(score, false);
+            }
+            Main.gameState = GameState.GAME_OVER;
+        }
+    }
+
+    public boolean isTwoPlayers() {
+        return isTwoPlayers;
     }
 }
