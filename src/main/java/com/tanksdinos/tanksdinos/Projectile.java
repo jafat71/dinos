@@ -11,7 +11,7 @@ public class Projectile extends Sprite {
     private static final int BASE_DAMAGE = 10;
 
     public Projectile(double x, double y, int powerMultiplier) {
-        super(x, y, projectileImage);
+        super(x, y, projectileImage, 10, 20);
         this.velocityY = -SPEED;  // Proyectil se mueve hacia arriba
         this.damage = BASE_DAMAGE * powerMultiplier;
     }

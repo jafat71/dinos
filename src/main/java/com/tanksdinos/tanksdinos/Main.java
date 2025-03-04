@@ -23,9 +23,12 @@ public class Main extends Application {
     private DatabaseManager dbManager;
     private LevelManager levelManager;
     private PowerUpManager powerUpManager;
+    public static int lastScore = 0;
+    private static Main instance;
 
     @Override
     public void start(Stage stage) throws IOException {
+        instance = this;
         initializeManagers();
         setupCanvas();
         
@@ -78,14 +81,21 @@ public class Main extends Application {
         scene.setOnKeyPressed(e -> {
             switch (gameState) {
                 case PLAYING:
-                    gameWorld.handleInput(e.getCode());
+                    gameWorld.handleInput(e.getCode(), true);
                     break;
                 case MENU:
+                case GAME_OVER:
                     menuManager.handleInput(e.getCode());
                     break;
                 case PAUSE:
                     handlePauseInput(e.getCode());
                     break;
+            }
+        });
+
+        scene.setOnKeyReleased(e -> {
+            if (gameState == GameState.PLAYING) {
+                gameWorld.handleInput(e.getCode(), false);
             }
         });
     }
@@ -98,17 +108,17 @@ public class Main extends Application {
 
     private void renderPauseScreen() {
         gc.setFill(Color.BLACK);
-        gc.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());  // Clear screen with black background
+        gc.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
         gameWorld.render(gc);
         menuManager.renderPauseMenu(gc);
     }
 
     private void handleGameOver() {
         gc.setFill(Color.BLACK);
-        gc.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());  // Clear screen with black background
-        gameWorld.render(gc);
+        gc.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
+        lastScore = gameWorld.getScore();
         menuManager.renderGameOver(gc);
-        dbManager.saveScore(gameWorld.getScore());
+        dbManager.saveScore(lastScore);
     }
 
     private void update() {
@@ -117,8 +127,18 @@ public class Main extends Application {
 
     private void render() {
         gc.setFill(Color.BLACK);
-        gc.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());  // Clear screen with black background
+        gc.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
         gameWorld.render(gc);
+    }
+
+    public static void restartGame() {
+        
+        gameState = GameState.PLAYING;
+        instance.resetGame();
+    }
+
+    private void resetGame() {
+        gameWorld = new GameWorld(levelManager, powerUpManager, audioManager);
     }
 
     public static void main(String[] args) {

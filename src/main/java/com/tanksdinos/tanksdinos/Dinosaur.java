@@ -13,7 +13,7 @@ public class Dinosaur extends Sprite {
     private boolean dead = false;
 
     public Dinosaur(double x, double y, Tank target) {
-        super(x, y, dinoImage);
+        super(x, y, dinoImage, 40, 40);
         this.target = target;
         this.health = MAX_HEALTH;
     }

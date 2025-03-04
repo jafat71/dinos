@@ -15,9 +15,11 @@ public class Tank extends Sprite {
     private boolean doubleShot;
     private List<Projectile> projectiles;
     private AudioManager audioManager;
+    private double velocityX;
+    private double velocityY;
 
     public Tank(double x, double y, AudioManager audioManager) {
-        super(x, y, new Image(Tank.class.getResourceAsStream("/images/tank.png")));
+        super(x, y, new Image(Tank.class.getResourceAsStream("/images/tank.png")), 50, 50);
         this.health = MAX_HEALTH;
         this.projectiles = new ArrayList<>();
         this.audioManager = audioManager;
@@ -55,6 +57,8 @@ public class Tank extends Sprite {
 
     @Override
     public void update() {
+        super.update();  // Esto actualizará la posición basada en la velocidad
+        
         // Actualizar proyectiles
         projectiles.removeIf(Projectile::isDead);
         projectiles.forEach(Projectile::update);
@@ -107,4 +111,7 @@ public class Tank extends Sprite {
     public boolean isDead() {
         return health <= 0;
     }
+
+    public double getVelocityX() { return velocityX; }
+    public double getVelocityY() { return velocityY; }
 }

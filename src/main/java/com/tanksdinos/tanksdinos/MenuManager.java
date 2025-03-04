@@ -41,6 +41,17 @@ public class MenuManager {
     }
 
     public void handleInput(KeyCode code) {
+        switch (Main.gameState) {
+            case MENU:
+                handleMenuInput(code);
+                break;
+            case GAME_OVER:
+                handleGameOverInput(code);
+                break;
+        }
+    }
+
+    private void handleMenuInput(KeyCode code) {
         switch (code) {
             case UP:
                 selectedOption = (selectedOption - 1 + menuOptions.length) % menuOptions.length;
@@ -81,6 +92,21 @@ public class MenuManager {
         gc.setFill(Color.WHITE);
         gc.setFont(new Font("Arial", 40));
         gc.setTextAlign(TextAlignment.CENTER);
-        gc.fillText("GAME OVER", 400, 300);
+        gc.fillText("GAME OVER", 400, 250);
+        gc.setFont(new Font("Arial", 20));
+        gc.fillText("Score: " + Main.lastScore, 400, 300);
+        gc.fillText("Press ENTER to restart", 400, 350);
+        gc.fillText("Press ESC to return to menu", 400, 380);
+    }
+
+    private void handleGameOverInput(KeyCode code) {
+        switch (code) {
+            case ENTER:
+                Main.restartGame();
+                break;
+            case ESCAPE:
+                Main.gameState = GameState.MENU;
+                break;
+        }
     }
 }

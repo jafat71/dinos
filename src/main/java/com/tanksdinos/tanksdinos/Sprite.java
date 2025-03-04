@@ -13,12 +13,12 @@ public abstract class Sprite {
     protected double height;
     protected Image image;
 
-    public Sprite(double x, double y, Image image) {
+    public Sprite(double x, double y, Image image, double width, double height) {
         this.x = x;
         this.y = y;
         this.image = image;
-        this.width = image.getWidth();
-        this.height = image.getHeight();
+        this.width = width;
+        this.height = height;
         this.velocityX = 0;
         this.velocityY = 0;
     }
@@ -39,7 +39,7 @@ public abstract class Sprite {
     }
 
     public void render(GraphicsContext gc) {
-        gc.drawImage(image, x - width/2, y - height/2);
+        gc.drawImage(image, x - width/2, y - height/2, width, height);
     }
 
     public Rectangle2D getBoundary() {

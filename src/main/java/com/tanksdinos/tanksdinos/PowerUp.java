@@ -15,7 +15,7 @@ public class PowerUp extends Sprite {
     private static final Image powerUpImage = new Image(PowerUp.class.getResourceAsStream("/images/powerup.png"));
 
     public PowerUp(double x, double y, Type type) {
-        super(x, y, powerUpImage);
+        super(x, y, powerUpImage, 30, 30);
         this.type = type;
     }
 

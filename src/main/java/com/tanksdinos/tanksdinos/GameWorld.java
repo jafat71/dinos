@@ -19,6 +19,7 @@ public class GameWorld {
     private Random random = new Random();
     private static final int SPAWN_DELAY = 5000; // 5 segundos
     private long lastSpawnTime = 0;
+    private static final double TANK_SPEED = 5.0;
 
     public GameWorld(LevelManager levelManager, PowerUpManager powerUpManager, AudioManager audioManager) {
         this.levelManager = levelManager;
@@ -40,16 +41,22 @@ public class GameWorld {
         spawnInitialDinosaurs();
     }
 
-    public void handleInput(KeyCode code) {
+    public void handleInput(KeyCode code, boolean isPressed) {
         switch (code) {
             case LEFT:
-                playerTank.setVelocity(-5, 0);
+                playerTank.setVelocity(isPressed ? -TANK_SPEED : 0, playerTank.getVelocityY());
                 break;
             case RIGHT:
-                playerTank.setVelocity(5, 0);
+                playerTank.setVelocity(isPressed ? TANK_SPEED : 0, playerTank.getVelocityY());
+                break;
+            case UP:
+                playerTank.setVelocity(playerTank.getVelocityX(), isPressed ? -TANK_SPEED : 0);
+                break;
+            case DOWN:
+                playerTank.setVelocity(playerTank.getVelocityX(), isPressed ? TANK_SPEED : 0);
                 break;
             case SPACE:
-                playerTank.shoot();
+                if (isPressed) playerTank.shoot();
                 break;
         }
     }
