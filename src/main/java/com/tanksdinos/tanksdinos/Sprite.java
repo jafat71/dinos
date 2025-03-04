@@ -3,6 +3,7 @@ package com.tanksdinos.tanksdinos;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 import javafx.geometry.Rectangle2D;
+import javafx.scene.paint.Color;
 
 public abstract class Sprite {
     protected double x;
@@ -12,6 +13,8 @@ public abstract class Sprite {
     protected double width;
     protected double height;
     protected Image image;
+    private double lastX, lastY;
+    protected Color color;
 
     public Sprite(double x, double y, Image image, double width, double height) {
         this.x = x;
@@ -21,6 +24,7 @@ public abstract class Sprite {
         this.height = height;
         this.velocityX = 0;
         this.velocityY = 0;
+        this.color = Color.WHITE;
     }
 
     public void setVelocity(double x, double y) {
@@ -34,6 +38,8 @@ public abstract class Sprite {
     }
 
     public void update() {
+        lastX = x;
+        lastY = y;
         x += velocityX;
         y += velocityY;
     }
@@ -48,6 +54,11 @@ public abstract class Sprite {
 
     public boolean intersects(Sprite other) {
         return other.getBoundary().intersects(this.getBoundary());
+    }
+
+    public void undoLastMove() {
+        x = lastX;
+        y = lastY;
     }
 
     // Getters y setters

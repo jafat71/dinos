@@ -2,33 +2,105 @@ package com.tanksdinos.tanksdinos;
 
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
+import javafx.geometry.Point2D;
+import java.util.Random;
 
 public class Dinosaur extends Sprite {
-    private static final double SPEED = 2.0;
+    private static final double WANDER_SPEED = 1.0;
+    private static final double CHASE_SPEED = 2.0;
+    private static final double DETECTION_RANGE = 200;
     private static final int MAX_HEALTH = 50;
     private static final Image dinoImage = new Image(Dinosaur.class.getResourceAsStream("/images/dino.png"));
     
-    private Tank target;
-    private int health;
+    private Tank currentTarget;
+    private Tank player1;
+    private Tank player2;
+    private int health = 100;
     private boolean dead = false;
+    private Point2D wanderTarget;
+    private boolean isChasing = false;
+    private Random random = new Random();
 
-    public Dinosaur(double x, double y, Tank target) {
+    public Dinosaur(double x, double y, Tank player1, Tank player2) {
         super(x, y, dinoImage, 40, 40);
-        this.target = target;
+        this.player1 = player1;
+        this.player2 = player2;
         this.health = MAX_HEALTH;
+        updateTarget();
+    }
+
+    private void updateTarget() {
+        if (player2 == null || player2.isDead()) {
+            checkPlayerDistance(player1);
+        } else {
+            double dist1 = getDistanceTo(player1);
+            double dist2 = getDistanceTo(player2);
+            if (dist1 < dist2) {
+                checkPlayerDistance(player1);
+            } else {
+                checkPlayerDistance(player2);
+            }
+        }
+    }
+
+    private void checkPlayerDistance(Tank player) {
+        double distance = getDistanceTo(player);
+        isChasing = distance < DETECTION_RANGE;
+        currentTarget = player;
+    }
+
+    private void wander() {
+        if (wanderTarget == null || getDistanceTo(wanderTarget.getX(), wanderTarget.getY()) < 10) {
+            // Generar nuevo punto aleatorio para vagar
+            wanderTarget = new Point2D(
+                100 + random.nextDouble() * 600,
+                100 + random.nextDouble() * 400
+            );
+        }
+
+        // Moverse hacia el punto de vagabundeo
+        double dx = wanderTarget.getX() - x;
+        double dy = wanderTarget.getY() - y;
+        double distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance > 0) {
+            velocityX = (dx / distance) * WANDER_SPEED;
+            velocityY = (dy / distance) * WANDER_SPEED;
+        }
+    }
+
+    private void chaseTarget() {
+        double dx = currentTarget.getX() - x;
+        double dy = currentTarget.getY() - y;
+        double distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance > 0) {
+            velocityX = (dx / distance) * CHASE_SPEED;
+            velocityY = (dy / distance) * CHASE_SPEED;
+        }
+    }
+
+    private double getDistanceTo(Tank tank) {
+        double dx = tank.getX() - x;
+        double dy = tank.getY() - y;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    private double getDistanceTo(double targetX, double targetY) {
+        double dx = targetX - x;
+        double dy = targetY - y;
+        return Math.sqrt(dx * dx + dy * dy);
     }
 
     @Override
     public void update() {
-        if (!dead) {
-            // Movimiento hacia el tanque
-            double dx = target.getX() - x;
-            double dy = target.getY() - y;
-            double distance = Math.sqrt(dx * dx + dy * dy);
+        if (!isDead()) {
+            updateTarget();
             
-            if (distance > 0) {
-                velocityX = (dx / distance) * SPEED;
-                velocityY = (dy / distance) * SPEED;
+            if (isChasing) {
+                chaseTarget();
+            } else {
+                wander();
             }
             
             super.update();
@@ -53,15 +125,10 @@ public class Dinosaur extends Sprite {
     }
 
     public void takeDamage(int damage) {
-        if (!dead) {
-            health -= damage;
-            if (health <= 0) {
-                dead = true;
-            }
-        }
+        health -= damage;
     }
 
     public boolean isDead() {
-        return dead;
+        return health <= 0;
     }
 }

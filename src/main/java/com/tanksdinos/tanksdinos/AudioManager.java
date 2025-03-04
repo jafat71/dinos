@@ -1,53 +1,58 @@
 package com.tanksdinos.tanksdinos;
 
-import javafx.scene.media.MediaPlayer;
-import javafx.scene.media.Media;
+import javafx.scene.media.AudioClip;
 
 public class AudioManager {
-    private MediaPlayer shootSound;
-    private MediaPlayer powerUpSound;
-    private MediaPlayer explosionSound;
-    private MediaPlayer dinoRoarSound;
+    private AudioClip shootSound;
+    private AudioClip explosionSound;
+    private AudioClip dinoRoarSound;
+    private AudioClip powerUpSound;
     private double volume = 1.0;
 
     public AudioManager() {
         try {
-            String audioPath = AudioManager.class.getResource("/audio").toExternalForm();
-            shootSound = new MediaPlayer(new Media(audioPath + "/shoot.wav"));
-            powerUpSound = new MediaPlayer(new Media(audioPath + "/powerup.wav"));
-            explosionSound = new MediaPlayer(new Media(audioPath + "/explosion.wav"));
-            dinoRoarSound = new MediaPlayer(new Media(audioPath + "/roar.wav"));
+            // Cargar sonidos usando la ruta correcta
+            shootSound = new AudioClip(getClass().getResource("/audio/shoot.wav").toExternalForm());
+            explosionSound = new AudioClip(getClass().getResource("/audio/explosion.wav").toExternalForm());
+            dinoRoarSound = new AudioClip(getClass().getResource("/audio/roar.wav").toExternalForm());
+            powerUpSound = new AudioClip(getClass().getResource("/audio/powerup.wav").toExternalForm());
         } catch (Exception e) {
             System.err.println("Error cargando sonidos: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
     public void playShootSound() {
         if (shootSound != null) {
-            shootSound.setVolume(volume);
-            shootSound.play();
-        }
-    }
-
-    public void playPowerUpSound() {
-        if (powerUpSound != null) {
-            powerUpSound.setVolume(volume);
-            powerUpSound.play();
+            shootSound.play(volume);
         }
     }
 
     public void playExplosionSound() {
         if (explosionSound != null) {
-            explosionSound.setVolume(volume);
-            explosionSound.play();
+            explosionSound.play(volume);
         }
     }
 
     public void playDinoRoarSound() {
         if (dinoRoarSound != null) {
-            dinoRoarSound.setVolume(volume);
-            dinoRoarSound.play();
+            dinoRoarSound.play(volume);
         }
+    }
+
+    public void playPowerUpSound() {
+        if (powerUpSound != null) {
+            powerUpSound.play(volume);
+        }
+    }
+
+    // Alias para mantener compatibilidad
+    public void playPowerUpSpawnSound() {
+        playPowerUpSound();
+    }
+
+    public void playPowerUpCollectSound() {
+        playPowerUpSound();
     }
 
     public void setVolume(double volume) {

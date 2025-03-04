@@ -10,6 +10,9 @@ import javafx.animation.AnimationTimer;
 import java.io.IOException;
 import javafx.scene.input.KeyCode;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.TextAlignment;
+import javafx.scene.image.Image;
 
 public class Main extends Application {
     private static final int WIDTH = 800;
@@ -25,6 +28,11 @@ public class Main extends Application {
     private PowerUpManager powerUpManager;
     public static int lastScore = 0;
     private static Main instance;
+    private long countdownStartTime;
+    private static final int COUNTDOWN_DURATION = 3000; // 3 segundos
+    private boolean lastGameTwoPlayers = false;
+    private Color lastColor1 = Color.GREEN;
+    private Color lastColor2 = Color.YELLOW;
 
     @Override
     public void start(Stage stage) throws IOException {
@@ -43,6 +51,9 @@ public class Main extends Application {
                     case MENU:
                         menuManager.update();
                         menuManager.render(gc);
+                        break;
+                    case COUNTDOWN:
+                        renderCountdown();
                         break;
                     case PLAYING:
                         update();
@@ -64,12 +75,30 @@ public class Main extends Application {
     }
 
     private void initializeManagers() {
-        menuManager = new MenuManager();
+        // Inicializar primero el AudioManager
         audioManager = new AudioManager();
+        
+        // Luego iniciar la precarga de recursos
+        Thread resourceLoader = new Thread(() -> {
+            try {
+                // Precarga imágenes comunes
+                new Image(getClass().getResourceAsStream("/images/tank.png"));
+                new Image(getClass().getResourceAsStream("/images/dino.png"));
+                new Image(getClass().getResourceAsStream("/images/background.jpg"));
+                new Image(getClass().getResourceAsStream("/images/shield.png"));
+            } catch (Exception e) {
+                System.err.println("Error precargando recursos: " + e.getMessage());
+            }
+        });
+        resourceLoader.setDaemon(true);
+        resourceLoader.start();
+
+        // Inicializar el resto de managers
+        menuManager = new MenuManager();
         dbManager = new DatabaseManager();
         levelManager = new LevelManager();
         powerUpManager = new PowerUpManager();
-        gameWorld = new GameWorld(levelManager, powerUpManager, audioManager);
+        gameWorld = new GameWorld(levelManager, powerUpManager, audioManager, false, Color.GREEN, null);
     }
 
     private void setupCanvas() {
@@ -81,11 +110,18 @@ public class Main extends Application {
         scene.setOnKeyPressed(e -> {
             switch (gameState) {
                 case PLAYING:
-                    gameWorld.handleInput(e.getCode(), true);
+                    if (e.getCode() == KeyCode.ESCAPE) {
+                        gameState = GameState.MENU;
+                        menuManager = new MenuManager();
+                    } else {
+                        gameWorld.handleInput(e.getCode(), true);
+                    }
                     break;
                 case MENU:
-                case GAME_OVER:
                     menuManager.handleInput(e.getCode());
+                    break;
+                case GAME_OVER:
+                    handleGameOverInput(e.getCode());
                     break;
                 case PAUSE:
                     handlePauseInput(e.getCode());
@@ -121,6 +157,13 @@ public class Main extends Application {
         dbManager.saveScore(lastScore);
     }
 
+    private void handleGameOverInput(KeyCode code) {
+        if (code == KeyCode.M) {
+            gameState = GameState.MENU;
+            menuManager = new MenuManager();
+        }
+    }
+
     private void update() {
         gameWorld.update();
     }
@@ -131,14 +174,48 @@ public class Main extends Application {
         gameWorld.render(gc);
     }
 
-    public static void restartGame() {
-        
-        gameState = GameState.PLAYING;
-        instance.resetGame();
+    public static void startGame(boolean isTwoPlayers, Color color1, Color color2) {
+        instance.lastGameTwoPlayers = isTwoPlayers;
+        instance.lastColor1 = color1;
+        instance.lastColor2 = color2;
+        gameState = GameState.COUNTDOWN;
+        instance.countdownStartTime = System.currentTimeMillis();
+        instance.resetGame(isTwoPlayers, color1, color2);
     }
 
-    private void resetGame() {
-        gameWorld = new GameWorld(levelManager, powerUpManager, audioManager);
+    private void resetGame(boolean isTwoPlayers, Color color1, Color color2) {
+        gameWorld = new GameWorld(levelManager, powerUpManager, audioManager, isTwoPlayers, color1, color2);
+    }
+
+    private void renderCountdown() {
+        gc.setFill(Color.BLACK);
+        gc.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
+        gameWorld.render(gc);
+
+        long elapsed = System.currentTimeMillis() - countdownStartTime;
+        int count = 3 - (int)(elapsed / 1000);
+        
+        if (count <= 0) {
+            gameState = GameState.PLAYING;
+            return;
+        }
+
+        gc.setFill(Color.WHITE);
+        gc.setFont(new Font("Arial", 72));
+        gc.setTextAlign(TextAlignment.CENTER);
+        gc.fillText(String.valueOf(count), WIDTH/2, HEIGHT/2);
+    }
+
+    public static Main getInstance() {
+        return instance;
+    }
+
+    public AudioManager getAudioManager() {
+        return audioManager;
+    }
+
+    public GameWorld getGameWorld() {
+        return gameWorld;
     }
 
     public static void main(String[] args) {
@@ -148,6 +225,7 @@ public class Main extends Application {
 
 enum GameState {
     MENU,
+    COUNTDOWN,
     PLAYING,
     PAUSE,
     GAME_OVER,
