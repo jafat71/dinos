@@ -4,6 +4,7 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.input.KeyCode;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.scene.text.TextAlignment;
 import java.util.List;
 
@@ -248,7 +249,7 @@ public class MenuManager {
         }
     }
 
-    private void renderMainMenu(GraphicsContext gc) {
+    public void renderMainMenu(GraphicsContext gc) {
         gc.setFill(Color.BLACK);
         gc.fillRect(0, 0, 800, 600);
 
@@ -307,6 +308,13 @@ public class MenuManager {
             }
             gc.fillText(gameTypeOptions[i], 400, 300 + i * 50);
         }
+
+        // Añadir mensaje informativo
+        gc.setFill(Color.ORANGE);
+        gc.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        gc.setTextAlign(TextAlignment.CENTER);
+        gc.fillText("¡Solo el modo de un jugador cuenta para el ranking de puntuaciones!", 
+                    400, 550);
     }
 
     public void renderGameOver(GraphicsContext gc) {
@@ -688,5 +696,16 @@ public class MenuManager {
     private void showError(String message) {
         errorMessage = message;
         errorMessageTime = System.currentTimeMillis();
+    }
+
+    public void returnToMainMenu() {
+        // Si hay un usuario logueado, ir al menú principal
+        if (UserManager.getInstance().getCurrentUser() != null) {
+            menuState = MenuState.MAIN;
+        } else {
+            // Si no hay usuario, ir al menú de login
+            menuState = MenuState.LOGIN;
+        }
+        selectedOption = 0;
     }
 }

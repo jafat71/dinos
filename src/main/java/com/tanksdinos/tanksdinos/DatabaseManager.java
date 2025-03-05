@@ -3,15 +3,20 @@ package com.tanksdinos.tanksdinos;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.io.File;
 
 public class DatabaseManager {
-    private static final String DB_URL = "jdbc:sqlite:game.db";
+    private static final String DB_URL = "jdbc:sqlite:data/game.db";
     private static DatabaseManager instance;
     
     private DatabaseManager() {
         try {
-            // Registrar el driver de SQLite
+            // Asegurar que existe el directorio
+            new File("data").mkdirs();
+            
+            // Registrar el driver
             Class.forName("org.sqlite.JDBC");
+            
             initializeDatabase();
         } catch (ClassNotFoundException e) {
             System.err.println("Error al cargar el driver SQLite: " + e.getMessage());
@@ -92,6 +97,7 @@ public class DatabaseManager {
     }
 
     public void saveScore(String username, int score, boolean isTwoPlayers) {
+        // Solo guardar para el ranking si es modo un jugador
         String sql = "INSERT INTO scores(username, score, date, two_players) VALUES(?, ?, ?, ?)";
         try (Connection conn = DriverManager.getConnection(DB_URL);
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -100,6 +106,13 @@ public class DatabaseManager {
             pstmt.setLong(3, System.currentTimeMillis());
             pstmt.setBoolean(4, isTwoPlayers);
             pstmt.executeUpdate();
+            
+            // Mensaje de información
+            if (isTwoPlayers) {
+                System.out.println("Nota: Las puntuaciones en modo dos jugadores no cuentan para el ranking principal.");
+            } else {
+                System.out.println("¡Puntuación guardada en el ranking principal!");
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -107,7 +120,14 @@ public class DatabaseManager {
 
     public List<Score> getHighScores() {
         List<Score> scores = new ArrayList<>();
-        String sql = "SELECT username, score, date, two_players FROM scores ORDER BY score DESC LIMIT 10";
+        // Modificar para solo mostrar puntuaciones de un jugador
+        String sql = "SELECT username, score, date, two_players " +
+                     "FROM scores " + 
+                     "WHERE two_players = 0 " +  // Solo modo un jugador
+                     "GROUP BY username, score " +
+                     "ORDER BY score DESC " +
+                     "LIMIT 10";
+        
         try (Connection conn = DriverManager.getConnection(DB_URL);
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {

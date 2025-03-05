@@ -1,6 +1,7 @@
 package com.tanksdinos.tanksdinos;
 
 import javafx.scene.media.AudioClip;
+import javafx.scene.media.MediaPlayer;
 
 public class AudioManager {
     private AudioClip shootSound;
@@ -8,6 +9,7 @@ public class AudioManager {
     private AudioClip dinoRoarSound;
     private AudioClip powerUpSound;
     private double volume = 1.0;
+    private double currentVolume = 1.0;
 
     public AudioManager() {
         try {
@@ -56,6 +58,10 @@ public class AudioManager {
     }
 
     public void setVolume(double volume) {
+        //  0.0 y 1.0
         this.volume = Math.max(0.0, Math.min(1.0, volume));
+        
+        // Guarda el nivel de volumen actual
+        this.currentVolume = this.volume;
     }
 }

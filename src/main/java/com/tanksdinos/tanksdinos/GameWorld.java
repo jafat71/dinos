@@ -10,6 +10,7 @@ import javafx.geometry.Point2D;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import java.util.function.Consumer;
+import javafx.scene.text.TextAlignment;
 
 public class GameWorld {
     private Tank playerTank;
@@ -36,6 +37,9 @@ public class GameWorld {
     private static final Point2D DINO_SPAWN_POINT = new Point2D(750, 50); // Esquina superior derecha
     private static final Point2D TANK1_SPAWN_POINT = new Point2D(50, 550); // Esquina inferior izquierda
     private static final Point2D TANK2_SPAWN_POINT = new Point2D(150, 550); // Cerca del primer tanque
+    private String lastHordeMessage = "";
+    private long lastHordeMessageTime = 0;
+    private static final long MESSAGE_DURATION = 3000; // 3 segundos
 
     public GameWorld(LevelManager levelManager, PowerUpManager powerUpManager, AudioManager audioManager, 
                     boolean isTwoPlayers, Color color1, Color color2) {
@@ -111,7 +115,11 @@ public class GameWorld {
 
     private void spawnHorde() {
         audioManager.playDinoRoarSound();
-        Dinosaur.increaseSpeed(); // Aumentar velocidad con cada horda
+        Dinosaur.increaseSpeed(); // Incrementar velocidad con cada nueva horda
+        
+        // Mostrar mensaje en pantalla
+        lastHordeMessage = "¡Nueva horda! Velocidad: " + Math.round((Dinosaur.getBaseSpeed() * 100)) + "%";
+        lastHordeMessageTime = System.currentTimeMillis();
         
         for (int i = 0; i < HORDE_SIZE; i++) {
             double offsetX = random.nextDouble() * 100;
@@ -277,6 +285,14 @@ public class GameWorld {
 
         // Renderizar scores
         renderScores(gc);
+
+        // Mostrar mensaje de nueva horda si está activo
+        if (System.currentTimeMillis() - lastHordeMessageTime < MESSAGE_DURATION) {
+            gc.setFill(Color.RED);
+            gc.setFont(new Font("Arial", 24));
+            gc.setTextAlign(TextAlignment.CENTER);
+            gc.fillText(lastHordeMessage, 400, 100);
+        }
     }
 
     private void renderScores(GraphicsContext gc) {
@@ -356,5 +372,14 @@ public class GameWorld {
 
     public boolean isTwoPlayers() {
         return isTwoPlayers;
+    }
+
+    public void reset() {
+        // Limpiar entidades
+        dinosaurs.clear();
+        powerUps.clear();
+        Dinosaur.resetSpeed(); // Resetear la velocidad base
+        // Reiniciar cualquier timer o proceso en ejecución
+        // ...otros reinicios necesarios
     }
 }

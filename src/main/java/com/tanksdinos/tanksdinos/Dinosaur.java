@@ -21,7 +21,9 @@ public class Dinosaur extends Sprite {
     private boolean isChasing = false;
     private Random random = new Random();
     private static double speedMultiplier = 1.0;
-    private double baseSpeed = 2.0;
+    private static double baseSpeed = 1.0;
+    private static final double SPEED_INCREMENT = 0.2;
+    private double speed;
 
     public Dinosaur(double x, double y, Tank player1, Tank player2) {
         super(x, y, dinoImage, 40, 40);
@@ -29,6 +31,10 @@ public class Dinosaur extends Sprite {
         this.player2 = player2;
         this.health = MAX_HEALTH;
         updateTarget();
+        
+        double initialSpeed = baseSpeed + random.nextDouble() * 0.5;
+        this.velocityX = initialSpeed;
+        this.velocityY = initialSpeed;
     }
 
     private void updateTarget() {
@@ -66,8 +72,8 @@ public class Dinosaur extends Sprite {
         double distance = Math.sqrt(dx * dx + dy * dy);
         
         if (distance > 0) {
-            velocityX = (dx / distance) * WANDER_SPEED;
-            velocityY = (dy / distance) * WANDER_SPEED;
+            velocityX = (dx / distance) * baseSpeed;
+            velocityY = (dy / distance) * baseSpeed;
         }
     }
 
@@ -77,8 +83,8 @@ public class Dinosaur extends Sprite {
         double distance = Math.sqrt(dx * dx + dy * dy);
         
         if (distance > 0) {
-            velocityX = (dx / distance) * CHASE_SPEED;
-            velocityY = (dy / distance) * CHASE_SPEED;
+            velocityX = (dx / distance) * (baseSpeed * 1.5);
+            velocityY = (dy / distance) * (baseSpeed * 1.5);
         }
     }
 
@@ -137,10 +143,15 @@ public class Dinosaur extends Sprite {
     }
 
     public static void increaseSpeed() {
-        speedMultiplier *= 1.1;
+        baseSpeed *= 1.25;
+        System.out.println("¡Nueva horda! Velocidad de dinosaurios aumentada a: " + baseSpeed);
     }
 
     public static void resetSpeed() {
-        speedMultiplier = 1.0;
+        baseSpeed = 1.0;
+    }
+
+    public static double getBaseSpeed() {
+        return baseSpeed;
     }
 }

@@ -13,6 +13,10 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 import javafx.scene.image.Image;
+import javafx.scene.text.FontWeight;
+import javafx.scene.text.Text;
+import javafx.scene.layout.VBox;
+import javafx.scene.control.Label;
 
 public class Main extends Application {
     private static final int WIDTH = 800;
@@ -33,6 +37,7 @@ public class Main extends Application {
     private boolean lastGameTwoPlayers = false;
     private Color lastColor1 = Color.GREEN;
     private Color lastColor2 = Color.YELLOW;
+    private static boolean scoreRecorded = false;
 
     @Override
     public void start(Stage stage) throws IOException {
@@ -121,7 +126,12 @@ public class Main extends Application {
                     menuManager.handleInput(e.getCode());
                     break;
                 case GAME_OVER:
-                    handleGameOverInput(e.getCode());
+                    if (e.getCode() == KeyCode.ESCAPE) {
+                        gameState = GameState.MENU;
+                        scoreRecorded = false;
+                    } else {
+                        handleGameOverInput(e.getCode());
+                    }
                     break;
                 case PAUSE:
                     handlePauseInput(e.getCode());
@@ -154,16 +164,22 @@ public class Main extends Application {
         gc.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
         lastScore = gameWorld.getScore();
         menuManager.renderGameOver(gc);
-        User currentUser = UserManager.getInstance().getCurrentUser();
-        if (currentUser != null && !currentUser.isGuest()) {
-            dbManager.saveScore(currentUser.getUsername(), lastScore, gameWorld.isTwoPlayers());
+        
+        if (!scoreRecorded) {
+            User currentUser = UserManager.getInstance().getCurrentUser();
+            if (currentUser != null && !currentUser.isGuest()) {
+                dbManager.saveScore(currentUser.getUsername(), lastScore, gameWorld.isTwoPlayers());
+            }
+            scoreRecorded = true;
         }
     }
 
     private void handleGameOverInput(KeyCode code) {
         if (code == KeyCode.M) {
             gameState = GameState.MENU;
-            menuManager = new MenuManager();
+            menuManager.returnToMainMenu();
+            gameWorld.reset();
+            scoreRecorded = false;
         }
     }
 
